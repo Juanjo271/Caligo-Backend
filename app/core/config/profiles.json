@@ -1,0 +1,22 @@
+{
+  "salsa": {
+    "tags": ["Salsa", "Música", "Cultura", "Nocturna"],
+    "description": "Rutas enfocadas en salsa y vida nocturna"
+  },
+  "naturaleza": {
+    "tags": ["Naturaleza", "Río", "Ecoturismo", "Biodiversidad"],
+    "description": "Rutas de naturaleza y ecoturismo"
+  },
+  "historia": {
+    "tags": ["Historia", "Patrimonio", "Arquitectura", "Religioso"],
+    "description": "Rutas históricas y patrimoniales"
+  },
+  "gastronomia": {
+    "tags": ["Gastronomía", "Comida", "Mercado"],
+    "description": "Rutas gastronómicas"
+  },
+  "medico": {
+    "tags": ["Salud", "Bienestar", "Médico"],
+    "description": "Rutas de salud y bienestar"
+  }
+}

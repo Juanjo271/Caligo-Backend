@@ -3,25 +3,26 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from .database import init_db
-from .routers import pois, vision, rutas, audio
+from app.core.settings import settings
+from app.database import init_db
+from app.routers import pois, vision, rutas, audio
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATIC_DIR = os.path.join(BASE_DIR, "app", "static")
+STATIC_DIR = os.path.join(BASE_DIR, settings.static_dir)
 os.makedirs(STATIC_DIR, exist_ok=True)
 
 app = FastAPI(
-    title="CaliGuía API",
-    description="Backend para CaliGuía Go - Asistente Turístico Inteligente de Cali",
-    version="1.0.0",
+    title=settings.app_title,
+    description=settings.app_description,
+    version=settings.app_version,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors_origins,
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=settings.cors_allow_methods,
+    allow_headers=settings.cors_allow_headers,
 )
 
 app.include_router(pois.router)
@@ -35,17 +36,18 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 @app.on_event("startup")
 def startup_event():
     init_db()
-    print("=" * 50)
-    print("CaliGuía API iniciada correctamente")
-    print("Documentación: http://localhost:8000/docs")
-    print("=" * 50)
+    banner_width = 50
+    print("=" * banner_width)
+    print(f"{settings.app_title} iniciada correctamente")
+    print(f"Documentación: http://localhost:8000/docs")
+    print("=" * banner_width)
 
 
 @app.get("/")
 def root():
     return {
         "mensaje": "¡Oís! Bienvenido a CaliGuía API",
-        "version": "1.0.0",
+        "version": settings.app_version,
         "documentacion": "/docs",
     }
 

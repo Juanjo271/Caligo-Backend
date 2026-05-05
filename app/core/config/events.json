@@ -1,0 +1,29 @@
+{
+  "events": [
+    {
+      "month": 12,
+      "mode": "feria",
+      "information": "¡Feria de Cali! Eventos por toda la ciudad. La Salsa está爆."
+    },
+    {
+      "month": 8,
+      "mode": "petronio",
+      "information": "¡Festival Petronio Álvarez! La música del Pacífico está en su hogar."
+    },
+    {
+      "months": [3, 4],
+      "mode": "semana_santa",
+      "information": "Semana Santa en Cali. Procesiones y tradiciones religiosas."
+    },
+    {
+      "month": 6,
+      "mode": "birdfair",
+      "information": "Colombia BirdFair - Avistamiento de aves. 562 especies te esperan."
+    }
+  ],
+  "default": {
+    "mode": "normal",
+    "evento_activo": false,
+    "information": "Sin eventos especiales activos."
+  }
+}

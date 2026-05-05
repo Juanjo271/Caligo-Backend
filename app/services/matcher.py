@@ -3,15 +3,17 @@ import numpy as np
 import os
 from typing import Tuple, Optional
 
+from app.core.settings import settings
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-REF_IMAGES_DIR = os.path.join(BASE_DIR, "app", "static", "ref_images")
+REF_IMAGES_DIR = os.path.join(BASE_DIR, settings.ref_images_dir)
 
 
 class ORBMatcher:
     def __init__(self):
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
         self.descriptors_cache = {}
-        self.orb = cv2.ORB_create(nfeatures=500)
+        self.orb = cv2.ORB_create(nfeatures=settings.orb_nfeatures)
 
     def load_reference_image(self, image_filename: str) -> Optional[np.ndarray]:
         image_path = os.path.join(REF_IMAGES_DIR, image_filename)
@@ -47,10 +49,10 @@ class ORBMatcher:
         matches = sorted(matches, key=lambda x: x.distance)
 
         num_good_matches = len(matches)
-        if num_good_matches < 10:
-            return float(num_good_matches) / 50.0
+        if num_good_matches < settings.orb_min_good_matches:
+            return float(num_good_matches) / float(settings.orb_match_normalization_divisor)
 
-        score = float(num_good_matches) / 50.0
+        score = float(num_good_matches) / float(settings.orb_match_normalization_divisor)
         return min(score, 1.0)
 
     def verify(self, image_bytes: bytes, expected_filename: str) -> Tuple[bool, float]:
@@ -60,13 +62,19 @@ class ORBMatcher:
         if image is None:
             return False, 0.0
 
-        image_resized = cv2.resize(image, (640, 480))
+        image_resized = cv2.resize(
+            image,
+            (settings.orb_query_resize_width, settings.orb_query_resize_height)
+        )
 
         ref_image = self.load_reference_image(expected_filename)
         if ref_image is None:
             return False, 0.0
 
-        ref_resized = cv2.resize(ref_image, (640, 480))
+        ref_resized = cv2.resize(
+            ref_image,
+            (settings.orb_ref_resize_width, settings.orb_ref_resize_height)
+        )
 
         query_descriptor = self.compute_descriptor_from_image(image_resized)
         ref_descriptor = self.compute_descriptor_from_image(ref_resized)
@@ -76,7 +84,7 @@ class ORBMatcher:
 
         score = self.match(ref_descriptor, query_descriptor)
 
-        match = score >= 0.50
+        match = score >= settings.orb_match_threshold
 
         return match, score
 

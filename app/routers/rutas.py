@@ -1,18 +1,54 @@
 from fastapi import APIRouter, Query
-from typing import List, Optional
+from typing import List
 import sqlite3
 import json
 import math
 from datetime import datetime
+import os
 
-from ..models import POIListItem, RutaResponse, ConfigResponse
-from ..database import DB_PATH
+from app.models import POIListItem, RutaResponse, ConfigResponse
+from app.database import DB_PATH
+from app.core.settings import settings
 
 router = APIRouter(prefix="/api", tags=["Rutas y Config"])
 
+EARTH_RADIUS_METERS = 6371000
+
+PROFILES = {}
+PROFILES_LOADED = False
+
+
+def load_profiles():
+    global PROFILES, PROFILES_LOADED
+    if not PROFILES_LOADED:
+        profiles_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            settings.profiles_file
+        )
+        if os.path.exists(profiles_path):
+            with open(profiles_path, "r", encoding="utf-8") as f:
+                PROFILES = json.load(f)
+        PROFILES_LOADED = True
+
+
+EVENTS_CONFIG = {}
+EVENTS_LOADED = False
+
+
+def load_events():
+    global EVENTS_CONFIG, EVENTS_LOADED
+    if not EVENTS_LOADED:
+        events_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            settings.events_file
+        )
+        if os.path.exists(events_path):
+            with open(events_path, "r", encoding="utf-8") as f:
+                EVENTS_CONFIG = json.load(f)
+        EVENTS_LOADED = True
+
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    R = 6371000
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
     delta_phi = math.radians(lat2 - lat1)
@@ -21,24 +57,18 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     a = math.sin(delta_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-    return R * c
+    return EARTH_RADIUS_METERS * c
 
 
 def calculate_score(poi_tags: List[str], perfil: str, distance: float) -> float:
-    tag_scores = {
-        "salsa": ["Salsa", "Música", "Cultura", "Nocturna"],
-        "naturaleza": ["Naturaleza", "Río", "Ecoturismo", "Biodiversidad"],
-        "historia": ["Historia", "Patrimonio", "Arquitectura", "Religioso"],
-        "gastronomia": ["Gastronomía", "Comida", "Mercado"],
-        "medico": ["Salud", "Bienestar", "Médico"],
-    }
+    load_profiles()
+    tag_scores = PROFILES.get(perfil.lower(), {}).get("tags", [])
 
-    relevant_tags = tag_scores.get(perfil.lower(), [])
-    tag_match = sum(1 for tag in poi_tags if tag in relevant_tags) / max(len(relevant_tags), 1)
+    tag_match = sum(1 for tag in poi_tags if tag in tag_scores) / max(len(tag_scores), 1)
 
-    distance_score = max(0, 1 - (distance / 5000))
+    distance_score = max(0, 1 - (distance / settings.max_scoring_distance))
 
-    return 0.6 * tag_match + 0.4 * distance_score
+    return settings.tag_match_weight * tag_match + settings.distance_score_weight * distance_score
 
 
 @router.get("/ruta", response_model=RutaResponse)
@@ -95,39 +125,30 @@ def get_ruta(
 
 @router.get("/config/evento", response_model=ConfigResponse)
 def get_evento_config():
+    load_events()
     hoy = datetime.now()
     mes = hoy.month
 
-    if mes == 12:
-        return ConfigResponse(
-            modo_evento="feria",
-            evento_activo=True,
-            informacion="¡Feria de Cali! Eventos por toda la ciudad. La Salsa está爆."
-        )
-    elif mes == 8:
-        return ConfigResponse(
-            modo_evento="petronio",
-            evento_activo=True,
-            informacion="¡Festival Petronio Álvarez! La música del Pacífico está en su hogar."
-        )
-    elif mes == 3 or mes == 4:
-        return ConfigResponse(
-            modo_evento="semana_santa",
-            evento_activo=True,
-            informacion="Semana Santa en Cali. Procesiones y tradiciones religiosas."
-        )
-    elif mes == 6:
-        return ConfigResponse(
-            modo_evento="birdfair",
-            evento_activo=True,
-            informacion="Colombia BirdFair - Avistamiento de aves. 562 especies te esperan."
-        )
-    else:
-        return ConfigResponse(
-            modo_evento="normal",
-            evento_activo=False,
-            informacion="Sin eventos especiales activos."
-        )
+    events = EVENTS_CONFIG.get("events", [])
+    for event in events:
+        months = event.get("months", [event.get("month")])
+        if mes in months:
+            return ConfigResponse(
+                modo_evento=event["mode"],
+                evento_activo=True,
+                informacion=event["information"]
+            )
+
+    default = EVENTS_CONFIG.get("default", {
+        "mode": "normal",
+        "evento_activo": False,
+        "information": "Sin eventos especiales activos."
+    })
+    return ConfigResponse(
+        modo_evento=default["mode"],
+        evento_activo=default.get("evento_activo", False),
+        informacion=default["information"]
+    )
 
 
 @router.post("/checkin")
