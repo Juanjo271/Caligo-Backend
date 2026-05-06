@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import json
+import time
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "data", "caliguia.db")
@@ -60,6 +61,16 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            is_admin INTEGER DEFAULT 1,
+            created_at INTEGER
+        )
+    """)
+
     cursor.execute("SELECT COUNT(*) FROM pois")
     if cursor.fetchone()[0] == 0:
         for poi in POIS_DATA:
@@ -75,6 +86,18 @@ def init_db():
                 poi.get("imagen_referencia"), poi.get("audio_narracion"), poi.get("es_legendario", 0)
             ))
         print(f"Se insertaron {len(POIS_DATA)} POIs en la base de datos.")
+
+    cursor.execute("SELECT COUNT(*) FROM users")
+    if cursor.fetchone()[0] == 0:
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        password_hash = pwd_context.hash("admin123")
+        timestamp = int(time.time())
+        cursor.execute("""
+            INSERT INTO users (username, password_hash, is_admin, created_at)
+            VALUES (?, ?, ?, ?)
+        """, ("admin", password_hash, 1, timestamp))
+        print("Usuario admin creado: username='admin', password='admin123'")
 
     conn.commit()
     conn.close()

@@ -1,0 +1,234 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if poi %}Editar Spot{% else %}Nuevo Spot{% endif %} - CaliGuía Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">
+        {% if poi %}
+            <i class="bi bi-pencil-square me-2 text-primary"></i>Editar Spot
+        {% else %}
+            <i class="bi bi-plus-circle me-2 text-primary"></i>Nuevo Spot
+        {% endif %}
+    </h2>
+    <a href="/admin/pois" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Volver
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card card-stats">
+            <div class="card-body p-4">
+                <form id="poiForm" enctype="multipart/form-data">
+                    {% if poi %}
+                    <input type="hidden" name="poi_id" value="{{ poi.id }}">
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre del spot *</label>
+                        <input type="text" name="nombre" class="form-control form-control-lg" required
+                               value="{{ poi.nombre if poi else '' }}" placeholder="Ej: Iglesia La Ermita">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Categoría</label>
+                            <input type="text" name="categoria" class="form-control" list="categoryList"
+                                   value="{{ poi.categoria if poi else '' }}" placeholder="Ej: Arquitectura / Religioso">
+                            <datalist id="categoryList">
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Tags (separados por coma)</label>
+                            <input type="text" name="tags" class="form-control"
+                                   value="{{ poi.tags_list | join(', ') if poi and poi.tags_list else '' }}"
+                                   placeholder="Ej: Historia, Religioso, Arquitectura">
+                            <div class="form-text">Tags existentes: {{ tags | join(', ') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Latitud *</label>
+                            <input type="number" name="lat" id="latInput" class="form-control" step="any" required
+                                   value="{{ poi.lat if poi else '3.4516' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Longitud *</label>
+                            <input type="number" name="lon" id="lonInput" class="form-control" step="any" required
+                                   value="{{ poi.lon if poi else '-76.5321' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Radio (metros)</label>
+                            <input type="number" name="radio_metros" class="form-control" min="10" max="500"
+                                   value="{{ poi.radio_metros if poi else '50' }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mapa - Hacé click para ubicar el spot</label>
+                        <div id="map" class="map-container"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Descripción corta</label>
+                        <textarea name="descripcion" class="form-control" rows="2" placeholder="Breve descripción para la app">{{ poi.descripcion if poi else '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Historia / Narración *</label>
+                        <textarea name="historia" id="historiaText" class="form-control" rows="5" required
+                                  placeholder="Escribí la historia completa que se narrará al descubrir el spot...">{{ poi.historia if poi else '' }}</textarea>
+                        <div class="form-text">Esta historia se convertirá en audio con voz caleña (es-CO-SalomeNeural).</div>
+                    </div>
+
+                    <div class="row align-items-center">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="es_legendario" id="legendarioCheck"
+                                       {% if poi and poi.es_legendario %}checked{% endif %}>
+                                <label class="form-check-label fw-semibold" for="legendarioCheck">
+                                    <i class="bi bi-star-fill text-warning me-1"></i>Spot Legendario
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="generate_audio" id="generateAudioCheck" checked>
+                                <label class="form-check-label fw-semibold" for="generateAudioCheck">
+                                    <i class="bi bi-music-note-beamed text-primary me-1"></i>Generar audio automáticamente
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Imagen de referencia</label>
+                        <input type="file" name="image" class="form-control" accept=".jpg,.jpeg,.png">
+                        {% if poi and poi.imagen_referencia %}
+                        <div class="mt-2">
+                            <img src="/static/ref_images/{{ poi.imagen_referencia }}" class="poi-image-preview" alt="Imagen actual">
+                            <div class="form-text">Imagen actual: {{ poi.imagen_referencia }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-lg me-2"></i>{% if poi %}Guardar cambios{% else %}Crear Spot{% endif %}
+                        </button>
+                        <a href="/admin/pois" class="btn btn-outline-secondary btn-lg">Cancelar</a>
+                    </div>
+                </form>
+
+                <div id="formMessage" class="alert mt-3 d-none"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card card-stats">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Ayuda</h6>
+                <ul class="list-unstyled small text-muted mb-0">
+                    <li class="mb-2"><i class="bi bi-1-circle me-2 text-primary"></i><strong>Coordenadas:</strong> Hacé click en el mapa o escribí lat/lon manualmente.</li>
+                    <li class="mb-2"><i class="bi bi-2-circle me-2 text-primary"></i><strong>Radio:</strong> Distancia en metros para que el usuario pueda "capturar" el spot.</li>
+                    <li class="mb-2"><i class="bi bi-3-circle me-2 text-primary"></i><strong>Historia:</strong> Texto que se narrará con voz caleña cuando el usuario lo descubra.</li>
+                    <li class="mb-2"><i class="bi bi-4-circle me-2 text-primary"></i><strong>Imagen:</strong> Foto que el usuario debe tomar para verificar que está en el lugar.</li>
+                    <li><i class="bi bi-5-circle me-2 text-primary"></i><strong>Legendario:</strong> Spots especiales que aparecen destacados en la app.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+mapboxgl.accessToken = '{{ mapbox_token }}';
+
+const latInput = document.getElementById('latInput');
+const lonInput = document.getElementById('lonInput');
+
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v12',
+    center: [parseFloat(lonInput.value) || -76.5321, parseFloat(latInput.value) || 3.4516],
+    zoom: 14
+});
+
+let marker = null;
+
+function updateMarker(lng, lat) {
+    latInput.value = lat.toFixed(6);
+    lonInput.value = lng.toFixed(6);
+
+    if (marker) marker.remove();
+    marker = new mapboxgl.Marker({ color: '#FF6B35' })
+        .setLngLat([lng, lat])
+        .addTo(map);
+}
+
+{% if poi %}
+updateMarker({{ poi.lon }}, {{ poi.lat }});
+{% endif %}
+
+map.on('click', (e) => {
+    updateMarker(e.lngLat.lng, e.lngLat.lat);
+});
+
+latInput.addEventListener('change', () => {
+    const lat = parseFloat(latInput.value);
+    const lon = parseFloat(lonInput.value);
+    if (!isNaN(lat) && !isNaN(lon)) {
+        map.setCenter([lon, lat]);
+        updateMarker(lon, lat);
+    }
+});
+
+lonInput.addEventListener('change', () => {
+    const lat = parseFloat(latInput.value);
+    const lon = parseFloat(lonInput.value);
+    if (!isNaN(lat) && !isNaN(lon)) {
+        map.setCenter([lon, lat]);
+        updateMarker(lon, lat);
+    }
+});
+
+document.getElementById('poiForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const msgDiv = document.getElementById('formMessage');
+    const poiId = formData.get('poi_id');
+
+    const url = poiId ? `/api/admin/pois/${poiId}` : '/api/admin/pois';
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            msgDiv.className = 'alert alert-success mt-3';
+            msgDiv.innerHTML = '<i class="bi bi-check-circle me-2"></i>Spot guardado correctamente. Redirigiendo...';
+            msgDiv.classList.remove('d-none');
+            setTimeout(() => {
+                window.location.href = '/admin/pois';
+            }, 1500);
+        } else {
+            msgDiv.className = 'alert alert-danger mt-3';
+            msgDiv.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Error al guardar el spot';
+            msgDiv.classList.remove('d-none');
+        }
+    } catch (err) {
+        msgDiv.className = 'alert alert-danger mt-3';
+        msgDiv.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Error de conexión';
+        msgDiv.classList.remove('d-none');
+    }
+});
+</script>
+{% endblock %}

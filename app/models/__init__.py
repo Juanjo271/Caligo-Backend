@@ -66,3 +66,48 @@ class ConfigResponse(BaseModel):
     modo_evento: str
     evento_activo: bool
     informacion: str
+
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    is_admin: bool = True
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    is_admin: bool
+    created_at: int
+
+
+class POICreate(BaseModel):
+    nombre: str
+    categoria: str = ""
+    tags: str = "[]"
+    lat: float
+    lon: float
+    radio_metros: int = 50
+    descripcion: str = ""
+    historia: str = ""
+    es_legendario: bool = False
+    generate_audio: bool = True
+
+
+class POIUpdate(BaseModel):
+    nombre: Optional[str] = None
+    categoria: Optional[str] = None
+    tags: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    radio_metros: Optional[int] = None
+    descripcion: Optional[str] = None
+    historia: Optional[str] = None
+    es_legendario: Optional[bool] = None
+    imagen_referencia: Optional[str] = None
+    audio_narracion: Optional[str] = None
