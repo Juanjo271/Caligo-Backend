@@ -20,7 +20,7 @@
     <div class="col-lg-8">
         <div class="card card-stats">
             <div class="card-body p-4">
-                <form id="poiForm" enctype="multipart/form-data">
+                <form id="poiForm" action="/api/admin/pois{% if poi %}/{{ poi.id }}{% endif %}" method="post" enctype="multipart/form-data">
                     {% if poi %}
                     <input type="hidden" name="poi_id" value="{{ poi.id }}">
                     {% endif %}
@@ -147,55 +147,63 @@
 </div>
 
 <script>
-mapboxgl.accessToken = '{{ mapbox_token }}';
-
 const latInput = document.getElementById('latInput');
 const lonInput = document.getElementById('lonInput');
 
-const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/streets-v12',
-    center: [parseFloat(lonInput.value) || -76.5321, parseFloat(latInput.value) || 3.4516],
-    zoom: 14
-});
-
+// Mapbox map (wrapped in try/catch so form still works if token is missing)
+let map = null;
 let marker = null;
+
+try {
+    mapboxgl.accessToken = '{{ mapbox_token }}';
+    map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [parseFloat(lonInput.value) || -76.5321, parseFloat(latInput.value) || 3.4516],
+        zoom: 14
+    });
+
+    {% if poi %}
+    updateMarker({{ poi.lon }}, {{ poi.lat }});
+    {% endif %}
+
+    map.on('click', (e) => {
+        updateMarker(e.lngLat.lng, e.lngLat.lat);
+    });
+
+    latInput.addEventListener('change', () => {
+        const lat = parseFloat(latInput.value);
+        const lon = parseFloat(lonInput.value);
+        if (!isNaN(lat) && !isNaN(lon) && map) {
+            map.setCenter([lon, lat]);
+            updateMarker(lon, lat);
+        }
+    });
+
+    lonInput.addEventListener('change', () => {
+        const lat = parseFloat(latInput.value);
+        const lon = parseFloat(lonInput.value);
+        if (!isNaN(lat) && !isNaN(lon) && map) {
+            map.setCenter([lon, lat]);
+            updateMarker(lon, lat);
+        }
+    });
+} catch (err) {
+    console.error('Mapbox init error:', err);
+    document.getElementById('map').innerHTML = '<div class="alert alert-warning m-3"><i class="bi bi-exclamation-triangle me-2"></i>Mapa no disponible. Configurá MAPBOX_PUBLIC_TOKEN.</div>';
+}
 
 function updateMarker(lng, lat) {
     latInput.value = lat.toFixed(6);
     lonInput.value = lng.toFixed(6);
 
     if (marker) marker.remove();
-    marker = new mapboxgl.Marker({ color: '#FF6B35' })
-        .setLngLat([lng, lat])
-        .addTo(map);
+    if (map) {
+        marker = new mapboxgl.Marker({ color: '#FF6B35' })
+            .setLngLat([lng, lat])
+            .addTo(map);
+    }
 }
-
-{% if poi %}
-updateMarker({{ poi.lon }}, {{ poi.lat }});
-{% endif %}
-
-map.on('click', (e) => {
-    updateMarker(e.lngLat.lng, e.lngLat.lat);
-});
-
-latInput.addEventListener('change', () => {
-    const lat = parseFloat(latInput.value);
-    const lon = parseFloat(lonInput.value);
-    if (!isNaN(lat) && !isNaN(lon)) {
-        map.setCenter([lon, lat]);
-        updateMarker(lon, lat);
-    }
-});
-
-lonInput.addEventListener('change', () => {
-    const lat = parseFloat(latInput.value);
-    const lon = parseFloat(lonInput.value);
-    if (!isNaN(lat) && !isNaN(lon)) {
-        map.setCenter([lon, lat]);
-        updateMarker(lon, lat);
-    }
-});
 
 document.getElementById('poiForm').addEventListener('submit', async (e) => {
     e.preventDefault();
