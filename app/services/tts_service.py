@@ -24,4 +24,19 @@ async def generate_audio(text: str, poi_id: int) -> str:
 
 
 def generate_audio_sync(text: str, poi_id: int) -> str:
-    return asyncio.run(generate_audio(text, poi_id))
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(generate_audio(text, poi_id))
+
+    import threading
+    result = [None]
+    def run_in_thread():
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        result[0] = new_loop.run_until_complete(generate_audio(text, poi_id))
+        new_loop.close()
+    t = threading.Thread(target=run_in_thread)
+    t.start()
+    t.join()
+    return result[0]

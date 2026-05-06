@@ -145,15 +145,29 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 const latInput = document.getElementById('latInput');
 const lonInput = document.getElementById('lonInput');
 
-// Mapbox map (wrapped in try/catch so form still works if token is missing)
 let map = null;
 let marker = null;
 
+function updateMarker(lng, lat) {
+    latInput.value = lat.toFixed(6);
+    lonInput.value = lng.toFixed(6);
+
+    if (marker) marker.remove();
+    if (map) {
+        marker = new mapboxgl.Marker({ color: '#FF6B35' })
+            .setLngLat([lng, lat])
+            .addTo(map);
+    }
+}
+
+// Mapbox map (wrapped in try/catch so form still works if token is missing)
 try {
     mapboxgl.accessToken = '{{ mapbox_token }}';
     map = new mapboxgl.Map({
@@ -193,18 +207,7 @@ try {
     document.getElementById('map').innerHTML = '<div class="alert alert-warning m-3"><i class="bi bi-exclamation-triangle me-2"></i>Mapa no disponible. Configurá MAPBOX_PUBLIC_TOKEN.</div>';
 }
 
-function updateMarker(lng, lat) {
-    latInput.value = lat.toFixed(6);
-    lonInput.value = lng.toFixed(6);
-
-    if (marker) marker.remove();
-    if (map) {
-        marker = new mapboxgl.Marker({ color: '#FF6B35' })
-            .setLngLat([lng, lat])
-            .addTo(map);
-    }
-}
-
+// Form submission
 document.getElementById('poiForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
