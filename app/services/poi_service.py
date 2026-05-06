@@ -208,7 +208,9 @@ def get_stats() -> dict:
     bypassed = cursor.fetchone()[0]
 
     cursor.execute("SELECT * FROM pois ORDER BY id DESC LIMIT 5")
-    recent = [dict(row) for row in cursor.fetchall()]
+    rows = cursor.fetchall()
+    cols = [desc[0] for desc in cursor.description]
+    recent = [dict(zip(cols, row)) for row in rows]
 
     conn.close()
 
