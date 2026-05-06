@@ -40,10 +40,13 @@ class Settings(BaseSettings):
     max_route_poi_count: int = 10
 
     default_poi_radius: int = 50
+    mapbox_public_token: str = ""
 
     class Config:
         env_prefix = "CALIGUIA_"
         case_sensitive = False
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
 
 settings = Settings()

@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 import os
 
 from app.core.security import decode_access_token
+from app.core.settings import settings
 from app.services.poi_service import get_poi, list_pois, count_pois, get_stats, get_categories, get_all_tags
 from app.services.auth_service import authenticate_user
 
@@ -99,7 +100,7 @@ async def poi_new_page(request: Request):
         "poi": None,
         "categories": categories,
         "tags": tags,
-        "mapbox_token": os.environ.get("MAPBOX_PUBLIC_TOKEN", ""),
+        "mapbox_token": settings.mapbox_public_token,
     })
 
 
@@ -127,7 +128,7 @@ async def poi_edit_page(request: Request, poi_id: int):
         "poi": poi,
         "categories": categories,
         "tags": tags,
-        "mapbox_token": os.environ.get("MAPBOX_PUBLIC_TOKEN", ""),
+        "mapbox_token": settings.mapbox_public_token,
     })
 
 
