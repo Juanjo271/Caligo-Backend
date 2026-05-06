@@ -26,7 +26,7 @@ async def login_page(request: Request):
     admin = get_current_admin(request)
     if admin:
         return RedirectResponse(url="/admin")
-    return templates.TemplateResponse("admin/login.html", {"request": request})
+    return templates.TemplateResponse(request, "admin/login.html", {"request": request})
 
 
 @router.get("/logout")
@@ -43,7 +43,7 @@ async def dashboard(request: Request):
         return RedirectResponse(url="/admin/login")
 
     stats = get_stats()
-    return templates.TemplateResponse("admin/dashboard.html", {
+    return templates.TemplateResponse(request, "admin/dashboard.html", {
         "request": request,
         "admin": admin,
         "stats": stats,
@@ -70,7 +70,7 @@ async def poi_list_page(
     categories = get_categories()
     tags = get_all_tags()
 
-    return templates.TemplateResponse("admin/poi_list.html", {
+    return templates.TemplateResponse(request, "admin/poi_list.html", {
         "request": request,
         "admin": admin,
         "pois": pois,
@@ -93,7 +93,7 @@ async def poi_new_page(request: Request):
 
     categories = get_categories()
     tags = get_all_tags()
-    return templates.TemplateResponse("admin/poi_form.html", {
+    return templates.TemplateResponse(request, "admin/poi_form.html", {
         "request": request,
         "admin": admin,
         "poi": None,
@@ -121,7 +121,7 @@ async def poi_edit_page(request: Request, poi_id: int):
 
     categories = get_categories()
     tags = get_all_tags()
-    return templates.TemplateResponse("admin/poi_form.html", {
+    return templates.TemplateResponse(request, "admin/poi_form.html", {
         "request": request,
         "admin": admin,
         "poi": poi,
@@ -141,7 +141,7 @@ async def poi_detail_page(request: Request, poi_id: int):
     if not poi:
         return RedirectResponse(url="/admin/pois")
 
-    return templates.TemplateResponse("admin/poi_detail.html", {
+    return templates.TemplateResponse(request, "admin/poi_detail.html", {
         "request": request,
         "admin": admin,
         "poi": poi,
