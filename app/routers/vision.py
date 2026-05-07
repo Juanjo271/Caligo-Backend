@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Request
 from fastapi.responses import JSONResponse
 import sqlite3
 import json
@@ -7,12 +7,15 @@ import os
 from ..models import VerifyResponse
 from ..database import DB_PATH
 from ..services.matcher import get_orb_matcher
+from ..core.limiter import limiter
+from ..core.settings import settings
 
 router = APIRouter(prefix="/api/vision", tags=["Visión"])
 
 
 @router.post("/match/{poi_id}", response_model=VerifyResponse)
-async def match_image(poi_id: int, file: UploadFile = File(...)):
+@limiter.limit(settings.rate_limit_admin_write)
+async def match_image(request: Request, poi_id: int, file: UploadFile = File(...)):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()

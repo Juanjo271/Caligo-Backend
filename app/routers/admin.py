@@ -4,6 +4,8 @@ from typing import Optional
 import json
 
 from app.core.security import decode_access_token
+from app.core.limiter import limiter
+from app.core.settings import settings
 from app.models import POICreate, POIUpdate
 from app.services.poi_service import (
     create_poi, update_poi, delete_poi, get_poi, list_pois, count_pois,
@@ -26,6 +28,7 @@ def get_current_admin(request: Request) -> dict:
 
 
 @router.post("/login")
+@limiter.limit(settings.rate_limit_login)
 async def admin_login(request: Request):
     form = await request.form()
     username = form.get("username")

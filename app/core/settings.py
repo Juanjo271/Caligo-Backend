@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     default_poi_radius: int = 50
     mapbox_public_token: str = ""
 
+    # Rate limiting
+    rate_limit_enabled: bool = True
+    rate_limit_default: str = "100/minute"
+    rate_limit_login: str = "5/minute"
+    rate_limit_admin_write: str = "10/minute"
+
     class Config:
         env_prefix = "CALIGUIA_"
         case_sensitive = False
